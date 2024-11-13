@@ -6,18 +6,19 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Zap, Laugh, Frown, Bolt } from 'lucide-react'
+import { Zap, Laugh, Frown, Pen, Trash } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 // import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import {Select,SelectContent,SelectItem,SelectTrigger,SelectValue,} from "@/components/ui/select"
 import axios from 'axios'
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle,DialogTrigger} from "@/components/ui/dialog"
+import {Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle,DialogTrigger,DialogClose} from "@/components/ui/dialog"
 import { Alert, AlertTitle, AlertDescription } from './components/ui/alert'
 
 //private imports
 import { CardAlert } from './fragments/Alerts'
+import { Document } from './fragments/Document'
 
 export default function Component() {
   const [connectionDetails, setConnectionDetails] = useState({
@@ -168,8 +169,12 @@ export default function Component() {
     console.log('Executing query:', query)
   }
 
-  const handleSellectCollection = ()=>{
+  const handleSelectCollection = ()=>{
     console.log('selecting collection')
+  }
+
+  const handleSelectDocument = (id:number)=>{
+
   }
 
   const handleCreateUser = async () => {
@@ -382,9 +387,9 @@ export default function Component() {
                         transition={{ duration: 0.2 }}
                       >
                         <h3 className='text-lg font-semibold mb-4'>Select Collection</h3>
-                        <div className='mb-4 grid-cols-6 grid gap-2'>
-                          <div className='col-span-5'>
-                          <Select onValueChange={handleSellectCollection}>
+                        <div className='mb-4 grid-cols-8 grid gap-2'>
+                          <div className='col-span-6'>
+                          <Select onValueChange={handleSelectCollection}>
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Select a collection" />
                             </SelectTrigger>
@@ -395,25 +400,49 @@ export default function Component() {
                             </SelectContent>
                           </Select>
                           </div>
+                          <div className='col-span-1'>
                             <Dialog>
-                              <DialogTrigger><Button variant="secondary" className='w-full'><Bolt/></Button></DialogTrigger>
+                              <DialogTrigger><Button variant="secondary" className='w-full'><Pen/></Button></DialogTrigger>
                               <DialogContent>
                                 <DialogHeader>
-                                  <DialogTitle>Collection Settings</DialogTitle>
+                                  <DialogTitle>Edit Collection</DialogTitle>
                                   <DialogDescription>
-                                    Make changes to your selected collection.
+                                    Change the name of the selected collection
                                   </DialogDescription>
                                     <div className='grid grid-row'>
-                                      <Label className='mt-5'>Edit name</Label>
-                                      <div className='mt-2 grid grid-cols-4 gap-2'>
-                                        <Input className='col-span-3'></Input>
-                                        <Button variant={"secondary"} className='col-span-1'>Save</Button>
+                                      <div className='mt-2 mb-4'>
+                                        <Input className='w-full'></Input>
                                       </div>
-                                      <Button className='mt-5' variant={'destructive'}>remove</Button>
+                                      <DialogClose asChild>
+                                        <Button variant={"secondary"}>Save</Button>
+                                      </DialogClose>
                                     </div>
                                 </DialogHeader>
                               </DialogContent>
                             </Dialog>
+                            </div>
+                            <div className='col-span-1'>
+                            <Dialog>
+                              <DialogTrigger><Button variant="destructive" className='w-full'><Trash/></Button></DialogTrigger>
+                              <DialogContent className=''>
+                                <DialogHeader>
+                                  <DialogTitle>Delete Collection</DialogTitle>
+                                  <DialogDescription className=''>
+                                    Are you sure you want to delete this collection?
+                                  </DialogDescription>
+                                  <div className='h-[10px]'></div>
+                                  <div className='grid grid-cols-2 gap-2'>
+                                    <DialogClose asChild>
+                                      <Button variant={"destructive"}>Delete</Button>
+                                    </DialogClose>
+                                    <DialogClose asChild>
+                                      <Button variant={"outline"}>Cancel</Button>
+                                    </DialogClose>
+                                  </div>
+                                </DialogHeader>
+                              </DialogContent>
+                            </Dialog>
+                            </div>
                           </div>
                         <h3 className="text-lg font-semibold mb-4">Documents</h3>
                         {/* <motion.div className='mb-4 h-[180px] shadow-inner flex flex-col space-y-2 rounded-md overflow-y-auto'>
@@ -424,14 +453,34 @@ export default function Component() {
                           <Button variant="ghost" className=' w-full'>sdf</Button>
                         </motion.div> */}
                         <ScrollArea className='mb-4 h-[180px] outline outline-gray-200 outline-1 flex flex-col rounded-sm'>
-                          <Button variant="ghost" className=' w-full'>sdf</Button>
-                          <Button variant="ghost" className=' w-full'>sdf</Button>
-                          <Button variant="ghost" className=' w-full'>sdf</Button>
-                          <Button variant="ghost" className=' w-full'>sdf</Button>
-                          <Button variant="ghost" className=' w-full'>sdf</Button>
-                          <Button variant="ghost" className=' w-full'>sdf</Button>
+                          <Document id={1} name='ok'/>
+                          <Document id={2} name='ok'/>
+                          <Document id={3} name='ok'/>
+                          
                         </ScrollArea>
                       </motion.div>
+                      <div>
+                        <Dialog>
+                          <DialogTrigger><Button variant="outline" className='w-full'>Delete Documents</Button></DialogTrigger>
+                          <DialogContent className=''>
+                            <DialogHeader>
+                              <DialogTitle>Delete Document</DialogTitle>
+                              <DialogDescription className=''>
+                                Are you sure you want to delete these documents?
+                              </DialogDescription>
+                              <div className='h-[10px]'></div>
+                              <div className='grid grid-cols-2 gap-2'>
+                                <DialogClose asChild>
+                                  <Button variant={"destructive"}>Delete</Button>
+                                </DialogClose>
+                                <DialogClose asChild>
+                                  <Button variant={"outline"}>Cancel</Button>
+                                </DialogClose>
+                              </div>
+                            </DialogHeader>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
                     </TabsContent>
                     <TabsContent value="createUser" key="createUser" className="space-y-4 mt-6">
                       <motion.div
