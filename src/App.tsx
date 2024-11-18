@@ -37,12 +37,13 @@ export default function Component() {
   const [isLoading, setIsLoading] = useState(false)
   // const [useSSL, setUseSSL] = useState(false)
 
-  const [query, setQuery] = useState('')
+
   const [collectionName, setCollectionName]= useState('')
   const [insertDocument, setInsertDocument] = useState('')
 
   const [collectionList, setCollectionList] = useState([])
   const [documentList, setDocumentList] = useState<any>([])
+  const [activeDocument,setActiveDocument]=useState('')
   
   const [newUser, setNewUser] = useState({ username: '', password: '', role: '' })
   const [isWideScreen, setIsWideScreen] = useState(true)
@@ -212,6 +213,7 @@ export default function Component() {
   }
 
   const handleSelectCollection = async (value:string)=>{
+    setDocumentList([])
     if(value){
       try{
         const responses = await axios.get(
@@ -224,12 +226,11 @@ export default function Component() {
           }
         )
         const documents = responses.data
-        console.log(documents)
-        // for (const document of documents) {
-        //   //push document in setdocument
-        //   setDocumentList((prevDocuments:any) => [...prevDocuments, document]);
-        //   console.log(documentList);
-        // }
+        // console.log(documents)
+        for (const document of documents) {
+          //push document in setdocument
+          setDocumentList((prevDocuments:any) => [...prevDocuments, document]);
+        }
       }
 
       catch{
@@ -251,6 +252,17 @@ export default function Component() {
     hidden: { opacity: 0, y: -20 }, // Start hidden and slightly above
     visible: { opacity: 1, y: 0 }, // Fully visible at its original position
     exit: { opacity: 0, y: -20 }, // Exit with fade and slide up
+  };
+
+  const formatDocument = (document: any) => {
+    return Object.keys(document)
+      .filter((key) => key !== '_id') // Exclude _id
+      .map((key) => {
+        const value = document[key];
+        // If the value is an object, stringify it, otherwise just return the value
+        return `${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`;
+      })
+      .join(', ');
   };
 
   return (
@@ -499,10 +511,18 @@ export default function Component() {
                           <Button variant="ghost" className=' w-full'>sdf</Button>
                         </motion.div> */}
                         <ScrollArea className='mb-4 h-[180px] outline outline-gray-200 outline-1 flex flex-col rounded-sm'>
-                          <Document id={1} name='ok'/>
-                          <Document id={2} name='ok'/>
-                          <Document id={3} name='ok'/>
-                          
+                        {documentList.length > 0 ? (
+                          documentList.map((document: any, index: number) => (
+                            <Document
+                              key={document._id || index} // Using a unique identifier like _id
+                              id={document._id}
+                              name={`[${index}]: ${formatDocument(document)}`} // Format the document
+                              setActiveDocument={setActiveDocument}
+                            />
+                          ))
+                        ) : (
+                          <div className='text-gray-500 text-sm text-center'>No documents found</div>
+                        )}
                         </ScrollArea>
                       </motion.div>
                       <div>
