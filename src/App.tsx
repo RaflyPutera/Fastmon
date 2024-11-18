@@ -1,20 +1,25 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useResetProjection } from 'framer-motion'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Zap, Laugh, Frown, Pen, Trash } from 'lucide-react'
+import { Zap, Laugh, Frown, Pen, Trash} from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 // import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
+// import { Textarea } from "@/components/ui/textarea"
 import {Select,SelectContent,SelectItem,SelectTrigger,SelectValue,} from "@/components/ui/select"
 import axios from 'axios'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle,DialogTrigger,DialogClose} from "@/components/ui/dialog"
 import { Alert, AlertTitle, AlertDescription } from './components/ui/alert'
+import { useToast } from "@/hooks/use-toast"
+
+
+import CodeMirror  from '@uiw/react-codemirror';
+import { json } from "@codemirror/lang-json";
 
 //private imports
 import { CardAlert } from './fragments/Alerts'
@@ -36,8 +41,8 @@ export default function Component() {
   const [collectionName, setCollectionName]= useState('')
   const [insertDocument, setInsertDocument] = useState('')
 
-  const [collectionSetting,setCollectionSetting] = useState(false)
   const [collectionList, setCollectionList] = useState([])
+  const [documentList, setDocumentList] = useState<any>([])
   
   const [newUser, setNewUser] = useState({ username: '', password: '', role: '' })
   const [isWideScreen, setIsWideScreen] = useState(true)
@@ -90,6 +95,8 @@ export default function Component() {
     }
   }, [stateAlert])
 
+  const {toast} = useToast()
+
   const handleConnect = async () => {
     setIsLoading(true);
     try {
@@ -129,15 +136,6 @@ export default function Component() {
     finally{
       setIsLoading(false)
     }
-  //   try {
-  //     // Simulating API call to connect to the database
-  //     await new Promise(resolve => setTimeout(resolve, 1500))
-  //     setIsConnected(true)
-  //   } catch (err) {
-  //     setError('Failed to connect to the database. Please check your credentials and try again.')
-  //   } finally {
-  //     setIsLoading(false)
-  //   }
   }
 
   const handleDisconnect = () => {
@@ -152,25 +150,92 @@ export default function Component() {
     setShowConfirm(false)
   }
 
-  const handleTabChange = (tab:string) =>{
+  const handleTabChange = async (tab:string) =>{
     if(tab === "read"){
-      //get api of all collections and 
+      try{
+        const response = await axios.get(
+          `http://172.16.11.74:8885/db/list_collections`,
+          { headers: { 'Content-Type': 'application/json' } }
+        );
+        if(response.status==200){
+          setCollectionList(response.data.collections)
+          console.log(collectionList)
+        }
+      }
+      catch(err:any){
+
+      }
     }
   }
 
   const handleCreate = async () => {
     // Implement document insertion logic here
-    console.log('collection name:', collectionName)
-    console.log('Inserting document:', insertDocument)
+    let title:string = ''
+    let description:string = ''
+    let variant:string='default'
+
+    if(!collectionName){
+      title='Failed to insert document!'
+      variant='destructive'
+      description="Collection name cannot be empty."
+    }
+    else{
+      try{
+        const ss=JSON.parse(insertDocument)
+        console.log(typeof(ss))
+        const response = await axios.post(
+          `http://172.16.11.74:8885/db/create`,
+          {
+            collection: collectionName,
+            document: insertDocument,
+          },
+          { headers: { 'Content-Type': 'application/json' } }
+        );
+        if(response.status===200){
+          title='Successfully inserted document!'
+          description='Document created successfully.'
+          variant='default'
+        }
+      }
+      catch(err:any){
+        title='Failed to insert document!'
+        variant='destructive'
+        description='Please, check the format of the inserted document.'
+    
+      }
+    }
+    toast({
+      title: title,
+      description: description,
+      variant: variant as any
+    })
   }
 
-  const handleQuery = async () => {
-    // Implement query execution logic here
-    console.log('Executing query:', query)
-  }
+  const handleSelectCollection = async (value:string)=>{
+    if(value){
+      try{
+        const responses = await axios.get(
+          `http://172.16.11.74:8885/db/collection`,
+          {
+            params: {
+              collection: value,
+            },
+            headers: { 'Content-Type': 'application/json' }
+          }
+        )
+        const documents = responses.data
+        console.log(documents)
+        // for (const document of documents) {
+        //   //push document in setdocument
+        //   setDocumentList((prevDocuments:any) => [...prevDocuments, document]);
+        //   console.log(documentList);
+        // }
+      }
 
-  const handleSelectCollection = ()=>{
-    console.log('selecting collection')
+      catch{
+
+      }
+    }
   }
 
   const handleSelectDocument = (id:number)=>{
@@ -190,6 +255,7 @@ export default function Component() {
 
   return (
     <motion.div className="min-h-screen bg-gradient-to-b from-white to-green-50 flex items-center justify-center p-4">
+      
       {showConfirm && <CardAlert setActive={setShowConfirm} fx={handleDisconnect} active={showConfirm} title='Confirm' description='Are you sure you want to disconnect?'/>}
       
       <motion.div className='mb-4 w-auto grid top-2 fixed'>
@@ -318,7 +384,7 @@ export default function Component() {
                 </div>
                 <Tabs defaultValue="create" onValueChange={handleTabChange} className="w-full">
                   <TabsList className={`h-full w-full ${isWideScreen ? 'flex' : 'grid grid-cols-1 gap-2'}`}>
-                    <TabsTrigger value="query" className="flex-1 py-2 px-4">Query</TabsTrigger>
+                    {/* <TabsTrigger value="query" className="flex-1 py-2 px-4">Query</TabsTrigger> */}
                     <TabsTrigger value="create" className="flex-1 py-2 px-4">Create</TabsTrigger>
                     <TabsTrigger value="read" className="flex-1 py-2 px-4">Select</TabsTrigger>
                     {/* <TabsTrigger value="update" className="flex-1 py-2 px-4">Update</TabsTrigger>
@@ -326,31 +392,6 @@ export default function Component() {
                     {/* <TabsTrigger value="createUser" className="flex-1 py-2 px-4">Create User</TabsTrigger> */}
                   </TabsList>
                   <AnimatePresence mode="wait">
-
-                  {/* #### Query Tab ####  */}
-                  <TabsContent value="query" key="query" className="space-y-4 mt-6">
-                  <motion.div
-                        key="query-motion"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <h3 className="text-lg font-semibold mb-2">Execute Query</h3>
-                        <Textarea
-                          placeholder="Enter MongoDB query"
-                          value={query}
-                          onChange={(e) => setQuery(e.target.value)}
-                          className="min-h-[100px] mb-2"
-                        />
-                        <h3 className="text-lg font-semibold mb-2">Result</h3>
-                        <Textarea
-                          className="min-h-[100px] mb-4"
-                        />
-                        <Button onClick={handleQuery} className="w-full">Execute Query</Button>
-                      </motion.div>
-                    </TabsContent>
-
                     {/* #### Create tab #### */}
                     <TabsContent value="create" key="create" className="space-y-4 mt-6">
                       <motion.div
@@ -367,13 +408,14 @@ export default function Component() {
                           onChange={(e) => setCollectionName(e.target.value)}
                         ></Input>
                         <h3 className="text-lg font-semibold mb-2">Insert Document</h3>
-                        <Textarea
-                          placeholder="Enter JSON document to insert"
-                          value={insertDocument}
-                          onChange={(e) => setInsertDocument(e.target.value)}
-                          className="min-h-[150px] mb-4"
+                        <CodeMirror
+                          height="120px"
+                          className='mb-4'
+                          extensions={[json()]}
+                          onChange={(value:string) => setInsertDocument(value)}
+                          theme="dark"
                         />
-                        <Button onClick={handleCreate} className="w-full">Insert Document</Button>
+                        <Button variant={"outline"} onClick={handleCreate} className="w-full">Insert Document</Button>
                       </motion.div>
                     </TabsContent>
 
@@ -393,10 +435,14 @@ export default function Component() {
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Select a collection" />
                             </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="collection1">Collection 1</SelectItem>
-                              <SelectItem value="collection2">Collection 2</SelectItem>
-                              <SelectItem value="collection3">Collection 3</SelectItem>
+                             <SelectContent>
+                              {collectionList.length > 0 ? (
+                                collectionList.map((collection, index) => (
+                                  <SelectItem key={index} value={collection}>
+                                      {collection}
+                                  </SelectItem>
+                                ))
+                              ):(<SelectItem value="No collections found" disabled></SelectItem>)}
                             </SelectContent>
                           </Select>
                           </div>
