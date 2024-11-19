@@ -1,29 +1,23 @@
-'use client'
-
 import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence, useResetProjection } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Zap, Laugh, Frown, Pen, Trash} from 'lucide-react'
+import { CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Zap, Laugh, Frown, Pen, Trash } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-// import { Switch } from "@/components/ui/switch"
-// import { Textarea } from "@/components/ui/textarea"
-import {Select,SelectContent,SelectItem,SelectTrigger,SelectValue,} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import axios from 'axios'
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle,DialogTrigger,DialogClose} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
 import { Alert, AlertTitle, AlertDescription } from './components/ui/alert'
 import { useToast } from "@/hooks/use-toast"
+import CodeMirror from '@uiw/react-codemirror'
+import { json } from "@codemirror/lang-json"
 
-
-import CodeMirror  from '@uiw/react-codemirror';
-import { json } from "@codemirror/lang-json";
-
-//private imports
 import { CardAlert } from './fragments/Alerts'
 import { Document } from './fragments/Document'
+
 
 export default function Component() {
   const [connectionDetails, setConnectionDetails] = useState({
@@ -42,10 +36,14 @@ export default function Component() {
   const [insertDocument, setInsertDocument] = useState('')
 
   const [collectionList, setCollectionList] = useState([])
+  const [activeCollection, setActiveCollection]=useState("")
   const [documentList, setDocumentList] = useState<any>([])
+  const [newName,setNewName]=useState("")
   const [activeDocument,setActiveDocument]=useState('')
+  const [checkRoot, setCheckRoot]=useState(false)
+  const [selectDocument, setSelectDocument]=useState<string[]>([]);
   
-  const [newUser, setNewUser] = useState({ username: '', password: '', role: '' })
+
   const [isWideScreen, setIsWideScreen] = useState(true)
 
   //alert
@@ -102,7 +100,7 @@ export default function Component() {
     setIsLoading(true);
     try {
         const response = await axios.post(
-            `http://172.16.11.74:8885/db/connect`,
+            `http://localhost:8885/db/connect`,
             {
                 username: connectionDetails.name,
                 password: connectionDetails.password,
@@ -153,19 +151,7 @@ export default function Component() {
 
   const handleTabChange = async (tab:string) =>{
     if(tab === "read"){
-      try{
-        const response = await axios.get(
-          `http://172.16.11.74:8885/db/list_collections`,
-          { headers: { 'Content-Type': 'application/json' } }
-        );
-        if(response.status==200){
-          setCollectionList(response.data.collections)
-          console.log(collectionList)
-        }
-      }
-      catch(err:any){
-
-      }
+      await getCollections()
     }
   }
 
@@ -183,9 +169,8 @@ export default function Component() {
     else{
       try{
         const ss=JSON.parse(insertDocument)
-        console.log(typeof(ss))
         const response = await axios.post(
-          `http://172.16.11.74:8885/db/create`,
+          `http://localhost:8885/db/create`,
           {
             collection: collectionName,
             document: insertDocument,
@@ -212,12 +197,23 @@ export default function Component() {
     })
   }
 
+  async function getCollections() {
+    const response = await axios.get(
+      `http://localhost:8885/db/list_collections`,
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    if(response.status==200){
+      setCollectionList(response.data.collections)
+    }
+  }
+
   const handleSelectCollection = async (value:string)=>{
     setDocumentList([])
+    setActiveCollection(value)
     if(value){
       try{
         const responses = await axios.get(
-          `http://172.16.11.74:8885/db/collection`,
+          `http://localhost:8885/db/collection`,
           {
             params: {
               collection: value,
@@ -234,19 +230,76 @@ export default function Component() {
       }
 
       catch{
-
       }
     }
   }
 
-  const handleSelectDocument = (id:number)=>{
-
+  const handleCollectionRename=async ()=>{
+    let title="Failed to rename collection"
+    let description="An error occured, please try again later"
+    let variant="destructive"
+    const response = await axios.post(
+      `http://localhost:8885/db/collection/edit`,
+      {
+        option:"rename",
+        collection_name: activeCollection,
+        new_name: newName,
+      },
+      { headers: { 'Content-Type': 'application/json' } }
+    )
+    if(response.status===200){
+      title="Successfully renamed collection"
+      description="Collection renamed successful to "+newName
+      variant="default"
+    }
+    toast({
+      title: title,
+      description: description,
+      variant: variant as any
+    })
+    await getCollections()
+    setNewName("")
+    setActiveDocument(newName)
+  
   }
 
-  const handleCreateUser = async () => {
-    // Implement user creation logic here
-    console.log('Creating user:', newUser)
+  const handleDeleteCollection= async ()=>{
+    let title="Failed to drop collection"
+    let description="An error occured, please try again later"
+    let variant="destructive"
+    const response = await axios.post(
+      `http://localhost:8885/db/collection/edit`,
+      {
+        option:"delete",
+        collection_name: activeCollection,
+      },
+      { headers: { 'Content-Type': 'application/json' } }
+    )
+    if(response.status===200){
+      title="Successfully dropped collection"
+      description="The collection "+activeCollection+" has been dropped."
+      variant="default"
+    }
+    toast({
+      title: title,
+      description: description,
+      variant: variant as any
+    })
+    await getCollections()
+    setActiveCollection("")
+    setDocumentList([])
   }
+
+  const handleDocumentDelete=async()=>{
+    console.log(selectDocument)
+  }
+
+  useEffect(()=>{
+    setSelectDocument([])
+    setCheckRoot(false)
+    
+  },[checkRoot])
+
 
   const alertVariants = {
     hidden: { opacity: 0, y: -20 }, // Start hidden and slightly above
@@ -396,12 +449,8 @@ export default function Component() {
                 </div>
                 <Tabs defaultValue="create" onValueChange={handleTabChange} className="w-full">
                   <TabsList className={`h-full w-full ${isWideScreen ? 'flex' : 'grid grid-cols-1 gap-2'}`}>
-                    {/* <TabsTrigger value="query" className="flex-1 py-2 px-4">Query</TabsTrigger> */}
                     <TabsTrigger value="create" className="flex-1 py-2 px-4">Create</TabsTrigger>
                     <TabsTrigger value="read" className="flex-1 py-2 px-4">Select</TabsTrigger>
-                    {/* <TabsTrigger value="update" className="flex-1 py-2 px-4">Update</TabsTrigger>
-                    <TabsTrigger value="Delete" className="flex-1 py-2 px-4">Delete</TabsTrigger> */}
-                    {/* <TabsTrigger value="createUser" className="flex-1 py-2 px-4">Create User</TabsTrigger> */}
                   </TabsList>
                   <AnimatePresence mode="wait">
                     {/* #### Create tab #### */}
@@ -451,7 +500,7 @@ export default function Component() {
                               {collectionList.length > 0 ? (
                                 collectionList.map((collection, index) => (
                                   <SelectItem key={index} value={collection}>
-                                      {collection}
+                                    {collection}
                                   </SelectItem>
                                 ))
                               ):(<SelectItem value="No collections found" disabled></SelectItem>)}
@@ -460,7 +509,7 @@ export default function Component() {
                           </div>
                           <div className='col-span-1'>
                             <Dialog>
-                              <DialogTrigger><Button variant="secondary" className='w-full'><Pen/></Button></DialogTrigger>
+                              <DialogTrigger className='w-full h-full outline outline-1 outline-gray-300  rounded-md items-center justify-center flex'><Pen size={"20px"} color='#3b3b3b'/></DialogTrigger>
                               <DialogContent>
                                 <DialogHeader>
                                   <DialogTitle>Edit Collection</DialogTitle>
@@ -469,10 +518,10 @@ export default function Component() {
                                   </DialogDescription>
                                     <div className='grid grid-row'>
                                       <div className='mt-2 mb-4'>
-                                        <Input className='w-full'></Input>
+                                        <Input className='w-full' onChange={(e)=>{setNewName(e.target.value)}}></Input>
                                       </div>
                                       <DialogClose asChild>
-                                        <Button variant={"secondary"}>Save</Button>
+                                        <Button onClick={handleCollectionRename} variant={"secondary"}>Save</Button>
                                       </DialogClose>
                                     </div>
                                 </DialogHeader>
@@ -481,8 +530,8 @@ export default function Component() {
                             </div>
                             <div className='col-span-1'>
                             <Dialog>
-                              <DialogTrigger><Button variant="destructive" className='w-full'><Trash/></Button></DialogTrigger>
-                              <DialogContent className=''>
+                            <DialogTrigger className='w-full h-full bg-red-500 rounded-md items-center justify-center flex'><Trash size={"20px"} color='white'/></DialogTrigger>
+                              <DialogContent>
                                 <DialogHeader>
                                   <DialogTitle>Delete Collection</DialogTitle>
                                   <DialogDescription className=''>
@@ -491,7 +540,7 @@ export default function Component() {
                                   <div className='h-[10px]'></div>
                                   <div className='grid grid-cols-2 gap-2'>
                                     <DialogClose asChild>
-                                      <Button variant={"destructive"}>Delete</Button>
+                                      <Button onClick={handleDeleteCollection} variant={"destructive"}>Delete</Button>
                                     </DialogClose>
                                     <DialogClose asChild>
                                       <Button variant={"outline"}>Cancel</Button>
@@ -503,21 +552,17 @@ export default function Component() {
                             </div>
                           </div>
                         <h3 className="text-lg font-semibold mb-4">Documents</h3>
-                        {/* <motion.div className='mb-4 h-[180px] shadow-inner flex flex-col space-y-2 rounded-md overflow-y-auto'>
-                          <Button variant="ghost" className=' w-full'>sdf</Button>
-                          <Button variant="ghost" className=' w-full'>sdf</Button>
-                          <Button variant="ghost" className=' w-full'>sdf</Button>
-                          <Button variant="ghost" className=' w-full'>sdf</Button>
-                          <Button variant="ghost" className=' w-full'>sdf</Button>
-                        </motion.div> */}
                         <ScrollArea className='mb-4 h-[180px] outline outline-gray-200 outline-1 flex flex-col rounded-sm'>
                         {documentList.length > 0 ? (
                           documentList.map((document: any, index: number) => (
                             <Document
+                              checkRoot={checkRoot}
                               key={document._id || index} // Using a unique identifier like _id
                               id={document._id}
                               name={`[${index}]: ${formatDocument(document)}`} // Format the document
                               setActiveDocument={setActiveDocument}
+                              selectDocument={selectDocument}
+                              setSelectDocument={setSelectDocument}
                             />
                           ))
                         ) : (
@@ -527,7 +572,7 @@ export default function Component() {
                       </motion.div>
                       <div>
                         <Dialog>
-                          <DialogTrigger><Button variant="outline" className='w-full'>Delete Documents</Button></DialogTrigger>
+                          <DialogTrigger className='h-[2.5em] w-full text-sm text-white bg-red-500 rounded-md items-center justify-center'>Delete Documents</DialogTrigger>
                           <DialogContent className=''>
                             <DialogHeader>
                               <DialogTitle>Delete Document</DialogTitle>
@@ -537,10 +582,12 @@ export default function Component() {
                               <div className='h-[10px]'></div>
                               <div className='grid grid-cols-2 gap-2'>
                                 <DialogClose asChild>
-                                  <Button variant={"destructive"}>Delete</Button>
+                                  <Button onClick={handleDocumentDelete} variant={"destructive"}>Delete</Button>
                                 </DialogClose>
                                 <DialogClose asChild>
-                                  <Button variant={"outline"}>Cancel</Button>
+                                  <Button onClick={()=>{
+                                    setCheckRoot(true)
+                                  }} variant={"outline"}>Cancel</Button>
                                 </DialogClose>
                               </div>
                             </DialogHeader>
@@ -548,54 +595,11 @@ export default function Component() {
                         </Dialog>
                       </div>
                     </TabsContent>
-                    <TabsContent value="createUser" key="createUser" className="space-y-4 mt-6">
-                      <motion.div
-                        key="createUser-motion"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <h3 className="text-lg font-semibold mb-4">Create User</h3>
-                        <div className="space-y-4">
-                          <Input
-                            placeholder="Username"
-                            value={newUser.username}
-                            onChange={(e) => setNewUser({...newUser, username: e.target.value})}
-                          />
-                          <Input
-                            type="password"
-                            placeholder="Password"
-                            value={newUser.password}
-                            onChange={(e) => setNewUser({...newUser, password: e.target.value})}
-                          />
-                          <Input
-                            placeholder="Role"
-                            value={newUser.role}
-                            onChange={(e) => setNewUser({...newUser, role: e.target.value})}
-                          />
-                        </div>
-                        <Button onClick={handleCreateUser} className="w-full mt-4">Create User</Button>
-                      </motion.div>
-                    </TabsContent>
                   </AnimatePresence>
                 </Tabs>
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* {error && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="mt-6 p-4 bg-red-100 text-red-700 rounded-md flex items-center"
-            >
-              <AlertCircle className="mr-2 h-5 w-5" />
-              {error}
-            </motion.div>
-          )} */}
         </CardContent>
       </motion.div>
     </motion.div>
