@@ -39,7 +39,9 @@ export default function Component() {
   const [activeCollection, setActiveCollection]=useState("")
   const [documentList, setDocumentList] = useState<any>([])
   const [newName,setNewName]=useState("")
+  const [openDocument, setOpenDocument] = useState(false)
   const [activeDocument,setActiveDocument]=useState('')
+  const [documentData, setDocumentData]=useState('')
   const [checkRoot, setCheckRoot]=useState(false)
   const [selectDocument, setSelectDocument]=useState<string[]>([]);
   
@@ -151,6 +153,10 @@ export default function Component() {
 
   const handleTabChange = async (tab:string) =>{
     if(tab === "read"){
+      setCollectionList([])
+      setDocumentList([])
+      setActiveCollection("")
+      setSelectDocument([])
       await getCollections()
     }
   }
@@ -181,6 +187,8 @@ export default function Component() {
           title='Successfully inserted document!'
           description='Document created successfully.'
           variant='default'
+          setCollectionName('')
+          setInsertDocument('')
         }
       }
       catch(err:any){
@@ -207,30 +215,30 @@ export default function Component() {
     }
   }
 
+  async function SelectCollection(value:string){
+    const responses = await axios.get(
+      `http://localhost:8885/db/select_collection`,
+      {
+        params: {
+          collection: value,
+        },
+        headers: { 'Content-Type': 'application/json' }
+      }
+    )
+    const documents = responses.data
+    // console.log(documents)
+    for (const document of documents) {
+      //push document in setdocument
+      setDocumentList((prevDocuments:any) => [...prevDocuments, document]);
+    }
+  }
+
   const handleSelectCollection = async (value:string)=>{
+    setSelectDocument([])
     setDocumentList([])
     setActiveCollection(value)
     if(value){
-      try{
-        const responses = await axios.get(
-          `http://localhost:8885/db/collection`,
-          {
-            params: {
-              collection: value,
-            },
-            headers: { 'Content-Type': 'application/json' }
-          }
-        )
-        const documents = responses.data
-        // console.log(documents)
-        for (const document of documents) {
-          //push document in setdocument
-          setDocumentList((prevDocuments:any) => [...prevDocuments, document]);
-        }
-      }
-
-      catch{
-      }
+      await SelectCollection(value)
     }
   }
 
@@ -290,14 +298,96 @@ export default function Component() {
     setDocumentList([])
   }
 
-  const handleDocumentDelete=async()=>{
-    console.log(selectDocument)
+  const handleDeleteDocument=async()=>{
+    let title="Failed to delete document'"
+    let description="An error occured, please try again later"
+    let variant="destructive"
+    const response = await axios.post(
+      `http://localhost:8885/db/document/edit`,
+      {
+        option:"delete",
+        collection: activeCollection,
+        selected_ids: selectDocument,
+      },
+      { headers: { 'Content-Type': 'application/json' } }
+    )
+    if(response.status===200){
+      title="Successfully dropped document"
+      description="Document have been dropped."
+      variant="default"
+    }
+    toast({
+      title: title,
+      description: description,
+      variant: variant as any
+    })
+    setSelectDocument([])
+    setDocumentList([])
+    setOpenDocument(false)
+    await SelectCollection(activeCollection)
+  }
+
+  const handleUpdateDocument=async()=>{
+    let title="Failed to update document'"
+    let description="Please make sure the format is correct"
+    let variant="destructive"
+    console.log(activeCollection,activeDocument,documentData)
+    const response = await axios.post(
+      `http://localhost:8885/db/document/edit`,
+      {
+        option:"update",
+        collection: activeCollection,
+        document_id: activeDocument,
+        document_update: documentData
+      },
+      { headers: { 'Content-Type': 'application/json' } }
+    )
+    if(response.status===200){
+      title="Successfully updated"
+      description="Document have been update"
+      variant="default"
+    }
+    toast({
+      title: title,
+      description: description,
+      variant: variant as any
+    })
+    setSelectDocument([])
+    setDocumentList([])
+    setOpenDocument(false)
+    await SelectCollection(activeCollection)
   }
 
   useEffect(()=>{
-    setSelectDocument([])
-    setCheckRoot(false)
-    
+    if(openDocument){
+      setSelectDocument([activeDocument])
+      const fetchData = async()=>{
+        const response = await axios.get(
+          `http://localhost:8885/db/get_document`,
+          {
+            params: {
+              collection: activeCollection,
+              document_id: activeDocument,
+            },
+            headers: { 'Content-Type': 'application/json' }
+          }
+        )
+        console.log(response)
+        let data = JSON.stringify(response.data,null,2)
+        setDocumentData(data)
+        console.log(documentData)
+      }
+      fetchData()
+    }else{
+      setSelectDocument([])
+    }
+  },[openDocument])
+
+  useEffect(()=>{
+    setTimeout(()=>{
+      setSelectDocument([])
+      setCheckRoot(false)
+    },60)
   },[checkRoot])
 
 
@@ -473,6 +563,7 @@ export default function Component() {
                           height="120px"
                           className='mb-4'
                           extensions={[json()]}
+                          value={insertDocument}
                           onChange={(value:string) => setInsertDocument(value)}
                           theme="dark"
                         />
@@ -560,6 +651,7 @@ export default function Component() {
                               key={document._id || index} // Using a unique identifier like _id
                               id={document._id}
                               name={`[${index}]: ${formatDocument(document)}`} // Format the document
+                              setOpenDocument={setOpenDocument}
                               setActiveDocument={setActiveDocument}
                               selectDocument={selectDocument}
                               setSelectDocument={setSelectDocument}
@@ -569,20 +661,52 @@ export default function Component() {
                           <div className='text-gray-500 text-sm text-center'>No documents found</div>
                         )}
                         </ScrollArea>
+                        <Dialog open={openDocument}>
+                          <DialogContent className='[&>button]:hidden' onInteractOutside={()=>{setOpenDocument(false)}}>
+                            <DialogHeader>
+                              <DialogTitle>Edit document</DialogTitle>
+                              <DialogDescription className='h-[25px]'>
+                                _ID : {activeDocument}
+                              </DialogDescription>
+                              <div className="text-left">
+                                <CodeMirror
+                                  height="200px"
+                                  className="mb-4 mt-4"
+                                  extensions={[json()]}
+                                  value={documentData}
+                                  onChange={(value: string) => setDocumentData(value)}
+                                  theme="dark"
+                                />
+                              </div>
+                              <div className="flex gap-2 mt-4">
+                                <div className='w-full grid grid-cols-2 gap-4'>
+                                <DialogClose className='col-span-1' asChild>
+                                      <Button onClick={handleDeleteDocument} variant="destructive">Delete</Button>
+                                    </DialogClose>
+                                  <DialogClose className='col-span-1' asChild>
+                                    <Button onClick={handleUpdateDocument} variant="outline">Save</Button>
+                                  </DialogClose>
+                                </div>
+                              </div>
+                            </DialogHeader>
+                          </DialogContent>
+                        </Dialog>
                       </motion.div>
                       <div>
                         <Dialog>
-                          <DialogTrigger className='h-[2.5em] w-full text-sm text-white bg-red-500 rounded-md items-center justify-center'>Delete Documents</DialogTrigger>
-                          <DialogContent className=''>
+                          <DialogTrigger disabled={selectDocument.length === 0} className={`h-[2.5em] w-full text-sm  ${selectDocument.length === 0 ? 'text-gray-400 bg-gray-50' : 'bg-red-500 text-white'} rounded-md items-center justify-center`}>Delete Documents</DialogTrigger>
+                          <DialogContent className="[&>button]:hidden">
                             <DialogHeader>
                               <DialogTitle>Delete Document</DialogTitle>
                               <DialogDescription className=''>
-                                Are you sure you want to delete these documents?
+                                {/* count the length of selectdocument */}
+
+                                Are you sure you want to delete {selectDocument.length} documents?
                               </DialogDescription>
                               <div className='h-[10px]'></div>
                               <div className='grid grid-cols-2 gap-2'>
                                 <DialogClose asChild>
-                                  <Button onClick={handleDocumentDelete} variant={"destructive"}>Delete</Button>
+                                  <Button onClick={handleDeleteDocument} variant={"destructive"}>Delete</Button>
                                 </DialogClose>
                                 <DialogClose asChild>
                                   <Button onClick={()=>{

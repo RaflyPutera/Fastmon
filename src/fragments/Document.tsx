@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator"
 interface DocumentProps{
     id:string,
     name:string,
+    setOpenDocument: React.Dispatch<React.SetStateAction<boolean>>;
     setActiveDocument:(id:string)=> void
     checkRoot:boolean
     selectDocument:string[]
@@ -14,7 +15,7 @@ interface DocumentProps{
 
 }
 
-export function Document({id,name, setActiveDocument,checkRoot, selectDocument,setSelectDocument}:DocumentProps){
+export function Document({id,name,setOpenDocument, setActiveDocument,checkRoot, selectDocument,setSelectDocument}:DocumentProps){
     const [isChecked, setIsChecked] = useState(false);
 
     const handleCheck = (checked:boolean)=>{
@@ -30,6 +31,7 @@ export function Document({id,name, setActiveDocument,checkRoot, selectDocument,s
 
     }
     const handleClick = () => {
+        setOpenDocument(true)
         setActiveDocument(id)
     };
 
