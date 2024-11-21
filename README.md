@@ -2,9 +2,8 @@
 <br/>
 <div align="center">
 <a href="https://github.com/ShaanCoding/ReadME-Generator">
-<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxY2M0NGYiIHN0cm9rZS13aWR0aD0iMS43NSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS16YXAiPjxwYXRoIGQ9Ik00IDE0YTEgMSAwIDAgMS0uNzgtMS42M2w5LjktMTAuMmEuNS41IDAgMCAxIC44Ni40NmwtMS45MiA2LjAyQTEgMSAwIDAgMCAxMyAxMGg3YTEgMSAwIDAgMSAuNzggMS42M2wtOS45IDEwLjJhLjUuNSAwIDAgMS0uODYtLjQ2bDEuOTItNi4wMkExIDEgMCAwIDAgMTEgMTR6Ii8+PC9zdmc+" alt="Logo" width="80" height="80">
 </a>
-<h3 align="center">Fastmon</h3>
+<h1 align="center">Fastmon</h1>
 <p align="center">
 A simple web-based CRUD application for your MongoDB
 
@@ -28,8 +27,13 @@ A simple web-based CRUD application for your MongoDB
 - **Delete**: Remove unwanted documents with just a few clicks.
 
 #### Preview
-![Product Screenshot](https://i.postimg.cc/02bDspDn/image.png)
-![Product Screenshot](https://i.postimg.cc/gkHJ1jBs/image.png)
+<div align="center">
+  <img src="https://i.postimg.cc/02bDspDn/image.png" alt="Product Screenshot" />
+</div>
+
+<div align="center">
+  <img src="https://i.postimg.cc/gkHJ1jBs/image.png" alt="Product Screenshot" />
+</div>
 
 ### Why Use Fastmon?
 
