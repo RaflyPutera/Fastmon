@@ -103,7 +103,7 @@ export default function Component() {
     setIsLoading(true);
     try {
         const response = await axios.post(
-            `https://f-api-qz80.onrender.com/db/connect`,
+            `http://localhost:8885/db/connect`,
             {
                 username: connectionDetails.name,
                 password: connectionDetails.password,
@@ -176,7 +176,7 @@ export default function Component() {
     else{
       try{
         const response = await axios.post(
-          `https://f-api-qz80.onrender.com/db/create`,
+          `http://localhost:8885/db/create`,
           {
             collection: collectionName,
             document: insertDocument,
@@ -207,7 +207,7 @@ export default function Component() {
 
   async function getCollections() {
     const response = await axios.get(
-      `https://f-api-qz80.onrender.com/db/list_collections`,
+      `http://localhost:8885/db/list_collections`,
       { headers: { 'Content-Type': 'application/json' } }
     );
     if(response.status==200){
@@ -217,7 +217,7 @@ export default function Component() {
 
   async function SelectCollection(value:string){
     const responses = await axios.get(
-      `https://f-api-qz80.onrender.com/db/select_collection`,
+      `http://localhost:8885/db/select_collection`,
       {
         params: {
           collection: value,
@@ -247,7 +247,7 @@ export default function Component() {
     let description="An error occured, please try again later"
     let variant="destructive"
     const response = await axios.post(
-      `https://f-api-qz80.onrender.com/db/collection/edit`,
+      `http://localhost:8885/db/collection/edit`,
       {
         option:"rename",
         collection_name: activeCollection,
@@ -276,7 +276,7 @@ export default function Component() {
     let description="An error occured, please try again later"
     let variant="destructive"
     const response = await axios.post(
-      `https://f-api-qz80.onrender.com/db/collection/edit`,
+      `http://localhost:8885/db/collection/edit`,
       {
         option:"delete",
         collection_name: activeCollection,
@@ -303,7 +303,7 @@ export default function Component() {
     let description="An error occured, please try again later"
     let variant="destructive"
     const response = await axios.post(
-      `https://f-api-qz80.onrender.com/db/document/edit`,
+      `http://localhost:8885/db/document/edit`,
       {
         option:"delete",
         collection: activeCollection,
@@ -333,7 +333,7 @@ export default function Component() {
     let variant="destructive"
     console.log(activeCollection,activeDocument,documentData)
     const response = await axios.post(
-      `https://f-api-qz80.onrender.com/db/document/edit`,
+      `http://localhost:8885/db/document/edit`,
       {
         option:"update",
         collection: activeCollection,
@@ -363,7 +363,7 @@ export default function Component() {
       setSelectDocument([activeDocument])
       const fetchData = async()=>{
         const response = await axios.get(
-          `https://f-api-qz80.onrender.com/db/get_document`,
+          `http://localhost:8885/db/get_document`,
           {
             params: {
               collection: activeCollection,

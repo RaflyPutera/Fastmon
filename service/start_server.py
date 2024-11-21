@@ -1,28 +1,22 @@
 # Package Imports
-import uvicorn
-from fastapi.middleware.cors import CORSMiddleware  # type: ignore
-from fastapi import FastAPI  # type: ignore
 import os
+import uvicorn
+from fastapi.middleware.cors import CORSMiddleware # type: ignore
+from fastapi import FastAPI # type: ignore
+
+# Local Imports
 
 # FastAPI App Declaration
-app = FastAPI()
-
-# Define allowed origins (your front-end URLs)
-origins = [
-    "https://fastmon.onrender.com",  # Replace with your production front-end domain
-    "http://localhost:5555",  # If you are running the front-end locally
-]
-
-# Add CORS middleware with allowed origins
+app=FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # Only allow the domains listed in origins
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all HTTP methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Include Services (Your routes or API)
+#Include Services
 from api import router as mongoservice
 app.include_router(mongoservice)
 
