@@ -19,6 +19,7 @@ import { CardAlert } from './fragments/Alerts'
 import { Document } from './fragments/Document'
 
 
+
 export default function Component() {
   const [connectionDetails, setConnectionDetails] = useState({
     name: '',
@@ -174,7 +175,6 @@ export default function Component() {
     }
     else{
       try{
-        const ss=JSON.parse(insertDocument)
         const response = await axios.post(
           `http://localhost:8885/db/create`,
           {

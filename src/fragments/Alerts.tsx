@@ -6,8 +6,7 @@ import {
     AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,} from "@/components/ui/alert-dialog"
+    AlertDialogTitle,} from "@/components/ui/alert-dialog"
 
 interface CardAlertProps {
     active:boolean;
